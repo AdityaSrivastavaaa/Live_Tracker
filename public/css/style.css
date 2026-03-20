@@ -1,0 +1,235 @@
+body {
+    margin: 0;
+    font-family: Arial;
+}
+
+#map {
+    height: 100vh;
+}
+
+/* Glass UI */
+#panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 250px;
+    padding: 15px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    background: rgba(255,255,255,0.2);
+    box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    z-index: 1000;
+    color: black;
+}
+
+#userList {
+    list-style: none;
+    padding: 0;
+}
+
+#userList li {
+    padding: 5px;
+    cursor: pointer;
+}
+
+#userList li:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+#routeInfo {
+    margin-top: 10px;
+}
+/* Marker Container */
+.marker-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: drop 0.3s ease;
+}
+
+/* Pin Shape */
+.marker-pin {
+    width: 20px;
+    height: 20px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    position: relative;
+    box-shadow: 0 0 10px rgba(0,0,0,0.4);
+}
+
+/* Inner dot */
+.marker-inner {
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 6px;
+    left: 6px;
+}
+
+/* Label */
+.marker-label {
+    margin-top: 5px;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+}
+
+/* YOU highlight */
+.marker-pin.me {
+    background: #00ff88 !important;
+    box-shadow: 0 0 15px #00ff88;
+}
+
+/* Pulse */
+.marker-pin.me::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #00ff88;
+    border-radius: 50%;
+    top: 0;
+    left: 0;
+    animation: pulse 1.5s infinite;
+    opacity: 0.5;
+}
+.marker-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 🔥 NAME ABOVE MARKER */
+.marker-label-top {
+    margin-bottom: 4px;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+/* Pin */
+.marker-pin {
+    width: 20px;
+    height: 20px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    position: relative;
+    box-shadow: 0 0 10px rgba(0,0,0,0.4);
+}
+
+/* Inner dot */
+.marker-inner {
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 6px;
+    left: 6px;
+}
+
+/* YOU highlight */
+.marker-pin.me {
+    background: #00ff88 !important;
+    box-shadow: 0 0 15px #00ff88;
+}
+.marker-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.marker-label-top {
+    margin-bottom: 4px;
+    background: rgba(0,0,0,0.75);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+}
+
+.marker-pin {
+    width: 20px;
+    height: 20px;
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    position: relative;
+    box-shadow: 0 0 10px rgba(0,0,0,0.4);
+}
+
+.marker-inner {
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 6px;
+    left: 6px;
+}
+
+.marker-pin.me {
+    background: #00ff88 !important;
+    box-shadow: 0 0 15px #00ff88;
+}
+
+.marker-pin.me::after {
+    content: "";
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #00ff88;
+    border-radius: 50%;
+    top: 0;
+    left: 0;
+    animation: pulse 1.5s infinite;
+    opacity: 0.5;
+}
+#nameModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+}
+
+#nameModal input {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    margin-right: 10px;
+}
+
+#nameModal button {
+    padding: 10px 15px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+/* Animations */
+@keyframes drop {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.5; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
