@@ -1,27 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Live Tracker Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Live Tracker</title>
 
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-
 </head>
 
 <body>
 
 <div id="map"></div>
+
 <div id="nameModal">
-    <input id="nameInput" placeholder="Enter your name" />
+    <input id="nameInput" placeholder="Enter name">
     <button onclick="saveName()">Start</button>
 </div>
+
 <div id="panel">
-    <h2>🛰️ Live Tracker</h2>
+    <h3>🛰️ Live Tracker</h3>
     <p id="users">Users: 0</p>
     <ul id="userList"></ul>
-
     <div id="routeInfo">
         <p id="place"></p>
         <p id="eta"></p>

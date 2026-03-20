@@ -1,6 +1,6 @@
-const socket = io();
+const socket = io({ transports: ["websocket"] });
 
-// 🔥 USER PERSISTENCE (NO REPEAT PROMPT)
+// USER
 let username = localStorage.getItem("username");
 let color = localStorage.getItem("color");
 
@@ -8,91 +8,65 @@ if (!username) {
     document.getElementById("nameModal").style.display = "flex";
 }
 
-// keep same color for identity
 if (!color) {
     color = "#" + Math.floor(Math.random() * 16777215).toString(16);
     localStorage.setItem("color", color);
 }
 
+function saveName() {
+    const name = document.getElementById("nameInput").value.trim();
+    if (!name) return alert("Enter name");
+
+    localStorage.setItem("username", name);
+    location.reload();
+}
+
+// MAP
+const map = L.map("map", { minZoom: 10, maxZoom: 18 })
+    .setView([20.5937, 78.9629], 5);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+// 🔥 FIX MOBILE RENDER BUG
+setTimeout(() => map.invalidateSize(), 500);
+
 let myLocation = null;
+let isFirst = true;
+let lastEmit = 0;
 let routeLayer = null;
-let isFirstLocation = true;
-let lastEmitTime = 0;
-
-// 🗺️ MAP INIT (controlled zoom)
-const map = L.map("map", {
-    minZoom: 10,
-    maxZoom: 18
-}).setView([20.5937, 78.9629], 5);
-
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    attribution: "© OpenStreetMap"
-}).addTo(map);
 
 const markers = {};
-const users = {};
 
-// 📍 LIVE LOCATION (THROTTLED + INITIAL ZOOM FIX)
+// LOCATION
 navigator.geolocation.watchPosition((pos) => {
     const now = Date.now();
-
-    // ⛔ prevent spamming socket
-    if (now - lastEmitTime < 2000) return;
-    lastEmitTime = now;
+    if (now - lastEmit < 2000) return;
+    lastEmit = now;
 
     const { latitude, longitude } = pos.coords;
     myLocation = [latitude, longitude];
 
-    // ✅ FIRST TIME ZOOM FIX
-    if (isFirstLocation) {
+    if (isFirst) {
         map.setView(myLocation, 16);
-        isFirstLocation = false;
+        isFirst = false;
     }
 
-    socket.emit("send-location", {
-        latitude,
-        longitude,
-        username,
-        color
-    });
+    socket.emit("send-location", { latitude, longitude, username, color });
 
-}, console.error, {
-    enableHighAccuracy: true,
-    timeout: 5000,
-    maximumAge: 0
-});
-function saveName() {
-    const name = document.getElementById("nameInput").value.trim();
+}, console.error);
 
-    if (!name) {
-        alert("Please enter a name");
-        return;
-    }
-
-    localStorage.setItem("username", name);
-
-    // hide modal
-    document.getElementById("nameModal").style.display = "none";
-
-    location.reload(); // reload with saved name
-}
-
-// 🔥 GOOGLE-STYLE MARKER
-function createAdvancedMarker(lat, lng, username, color, isMe) {
+// MARKER
+function createMarker(lat, lng, username, color, isMe) {
     return L.marker([lat, lng], {
         icon: L.divIcon({
-            className: "advanced-marker",
             html: `
                 <div class="marker-container">
-
                     <div class="marker-label-top">
                         ${isMe ? "🟢 You" : username}
                     </div>
-
                     <div class="marker-pin ${isMe ? "me" : ""}" style="background:${color}">
                         <div class="marker-inner"></div>
                     </div>
-
                 </div>
             `,
             iconSize: [40, 60],
@@ -101,42 +75,28 @@ function createAdvancedMarker(lat, lng, username, color, isMe) {
     });
 }
 
-
-// 🔥 RECEIVE LOCATION
+// RECEIVE
 socket.on("receive-location", (data) => {
     const { id, latitude, longitude, username, color } = data;
-
-    const latLng = [latitude, longitude];
-    users[id] = data;
-
     const isMe = socket.id === id;
 
     if (markers[id]) {
-        markers[id].setLatLng(latLng);
+        markers[id].setLatLng([latitude, longitude]);
     } else {
-        markers[id] = createAdvancedMarker(
-            latitude,
-            longitude,
-            username,
-            color,
-            isMe
-        ).addTo(map);
+        markers[id] = createMarker(latitude, longitude, username, color, isMe)
+            .addTo(map);
     }
 });
 
-
-// 🔥 USER LIST
+// USERS
 socket.on("users-list", (allUsers) => {
     const list = document.getElementById("userList");
     list.innerHTML = "";
 
     Object.entries(allUsers).forEach(([id, user]) => {
         const li = document.createElement("li");
-
         li.innerText = id === socket.id ? "🟢 You" : user.username;
-
         li.onclick = () => showRoute(user);
-
         list.appendChild(li);
     });
 
@@ -144,53 +104,36 @@ socket.on("users-list", (allUsers) => {
         `Users: ${Object.keys(allUsers).length}`;
 });
 
-
-// 🔥 ROUTE FUNCTION (STABLE + CLEAN)
+// ROUTE
 async function showRoute(user) {
     if (!myLocation) return;
 
     const [lat1, lon1] = myLocation;
     const { latitude: lat2, longitude: lon2 } = user;
 
-    try {
-        const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`;
+    const res = await fetch(
+        `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`
+    );
 
-        const res = await fetch(url);
-        const data = await res.json();
+    const data = await res.json();
+    const route = data.routes[0];
 
-        if (!data.routes || data.routes.length === 0) return;
+    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
 
-        const route = data.routes[0];
+    if (routeLayer) map.removeLayer(routeLayer);
 
-        const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+    routeLayer = L.polyline(coords, { color: "blue", weight: 6 }).addTo(map);
 
-        // remove old route
-        if (routeLayer) map.removeLayer(routeLayer);
+    map.flyTo([lat2, lon2], 16);
 
-        routeLayer = L.polyline(coords, {
-            color: "#007bff",
-            weight: 6
-        }).addTo(map);
+    document.getElementById("eta").innerText =
+        `ETA: ${Math.round(route.duration / 60)} mins`;
 
-        // ✅ CONTROLLED ZOOM (NO RANDOM ZOOM OUT)
-        map.flyTo([lat2, lon2], 16, {
-            duration: 1.5
-        });
+    const place = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat2}&lon=${lon2}`
+    );
 
-        // ⏱ ETA
-        const minutes = Math.round(route.duration / 60);
-        document.getElementById("eta").innerText = `ETA: ${minutes} mins`;
-
-        // 📍 LOCATION NAME
-        const placeRes = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat2}&lon=${lon2}`
-        );
-        const placeData = await placeRes.json();
-
-        document.getElementById("place").innerText =
-            placeData.display_name || "Location not found";
-
-    } catch (err) {
-        console.error("Route error:", err);
-    }
+    const placeData = await place.json();
+    document.getElementById("place").innerText =
+        placeData.display_name || "";
 }
